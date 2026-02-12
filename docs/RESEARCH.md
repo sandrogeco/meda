@@ -53,25 +53,102 @@ RutOS include un **gateway Modbus TCP/RTU** configurabile da WebUI (Services > M
 - Raccolta dati seriali con pubblicazione MQTT
 - **Nota**: per il nostro progetto NON useremo il gateway integrato, ma accesso diretto alla porta seriale `/dev/ttyATH1`.
 
-### SDK e Cross-Compilazione
-- Teltonika fornisce un **SDK basato su OpenWrt** scaricabile dal wiki Teltonika.
-- L'SDK include la toolchain completa per cross-compilazione.
-- **Target**: MIPS (MT7628) - toolchain: `mipsel-openwrt-linux-musl-gcc`
-- **Nota**: MT7628 e' **MIPS little-endian** (mipsel), non big-endian
-- Package manager: **opkg** (standard OpenWrt)
-- Si possono creare pacchetti `.ipk` installabili tramite opkg.
+### SDK RUT956 (verificato)
 
-### Deploy di software custom
-1. **Pacchetto opkg**: creare un Makefile OpenWrt, compilare con l'SDK, installare con `opkg install meda.ipk`
-2. **Binario statico**: cross-compilare con linking statico (`-static`), copiare via SCP, eseguire
-3. **Init script**: creare `/etc/init.d/meda` per avvio automatico (procd, il sistema init di OpenWrt)
-4. **Persistenza**: aggiungere a `/etc/sysupgrade.conf` per sopravvivere agli aggiornamenti firmware
+L'SDK e' stato scaricato e verificato: `rutos-ramips-rut9m-sdk/`
+
+**Versione**: `RUT9M_R_GPL_00.07.20.3` (basato su OpenWrt)
+
+**Configurazione target confermata dal `.config`:**
+```
+CONFIG_ARCH="mipsel"
+CONFIG_CPU_TYPE="24kc"
+CONFIG_TARGET_ramips=y
+CONFIG_TARGET_ramips_mt76x8=y
+CONFIG_TARGET_ARCH_PACKAGES="mipsel_24kc"
+CONFIG_TARGET_SUFFIX="musl"
+CONFIG_TARGET_OPTIMIZATION="-Os -pipe -mno-branch-likely -mips32r2 -mtune=24kc"
+```
+
+**Toolchain**: `mipsel-openwrt-linux-musl-gcc` (MIPS little-endian, musl libc)
+
+**libmodbus GIA' INCLUSA nell'SDK** (`package/libs/libmodbus/`):
+- Versione: v3.1.6 da GitHub (stephane/libmodbus)
+- Build automatico con autoreconf
+- Disponibile come shared library e per linking statico
+
+**Altre librerie utili gia' presenti nell'SDK:**
+- `cjson` - parsing JSON (per configurazione)
+- `libgpiod` - controllo GPIO (per I/O digitali)
+- `openssl` / `zlib` - se servono
+- `sqlite3` - per buffering locale opzionale
+
+**Build system**: Docker consigliato (`./scripts/dockerbuild`) oppure build nativo su Ubuntu 22.04.
+
+### Come creare un pacchetto per MEDA
+
+Basato sull'`ipk-example/` fornito da Teltonika:
+
+```bash
+# 1. Copiare il package nella struttura SDK
+cp -r meda-package/ rutos-ramips-rut9m-sdk/package/base/meda/
+
+# 2. Configurare (selezionare [M] per il pacchetto meda)
+cd rutos-ramips-rut9m-sdk
+./scripts/dockerbuild make menuconfig
+
+# 3. Compilare solo il pacchetto
+./scripts/dockerbuild make package/meda/{clean,compile}
+
+# 4. Il .ipk sara' in bin/packages/ramips/base/meda_*.ipk
+
+# 5. Deploy sul router
+scp bin/packages/ramips/base/meda_*.ipk root@192.168.1.1:/tmp/
+ssh root@192.168.1.1 "opkg install /tmp/meda_*.ipk"
+```
+
+**Makefile del pacchetto** (struttura per codice C con sorgenti):
+```makefile
+define Build/Compile
+    $(MAKE) -C $(PKG_BUILD_DIR)/ \
+        CC="$(TARGET_CC) $(TARGET_CFLAGS) $(TARGET_CPPFLAGS)" \
+        LDFLAGS="$(TARGET_LDFLAGS)" \
+        all
+endef
+
+define Package/meda/install
+    $(INSTALL_DIR) $(1)/usr/bin
+    $(INSTALL_BIN) $(PKG_BUILD_DIR)/meda $(1)/usr/bin/
+    $(INSTALL_DIR) $(1)/etc/init.d
+    $(INSTALL_BIN) ./files/meda.init $(1)/etc/init.d/meda
+    $(INSTALL_DIR) $(1)/etc/config
+    $(INSTALL_CONF) ./files/meda.conf $(1)/etc/config/meda
+endef
+```
+
+### Init script (procd) per avvio automatico
+```bash
+#!/bin/sh /etc/rc.common
+START=99
+STOP=10
+USE_PROCD=1
+
+start_service() {
+    procd_open_instance
+    procd_set_param command /usr/bin/meda
+    procd_set_param respawn 3600 5 0   # restart dopo crash
+    procd_set_param stdout 1           # log stdout su syslog
+    procd_set_param stderr 1           # log stderr su syslog
+    procd_close_instance
+}
+```
 
 ### Limitazioni RUT956
 - **musl libc** (non glibc) - alcune funzioni possono differire
-- **16 MB Flash** - solo ~3-6 MB liberi, usare linking statico e strip dei binari
+- **16 MB Flash** - solo ~3-6 MB liberi, usare strip dei binari
 - **No FPU hardware** (MIPS 24KEc) - evitare floating-point intensivi. STEIM2 e' OK (intero).
 - **128 MB RAM** - ~50-80 MB liberi dopo il sistema, abbondanti per il nostro software
+- **Sysupgrade**: aggiungere file a `/etc/sysupgrade.conf` per sopravvivere agli aggiornamenti
 
 ---
 
