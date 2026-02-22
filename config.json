@@ -1,0 +1,58 @@
+{
+  "serial": {
+    "device": "/dev/ttyATH1",
+    "baud": 9600,
+    "parity": "N",
+    "data_bits": 8,
+    "stop_bits": 1
+  },
+  "mseed": {
+    "network": "XX",
+    "station": "MEDA1",
+    "location": "00",
+    "format": 3,
+    "reclen": 512,
+    "datalink": "localhost:16000",
+    "file_dir": "/tmp/mseed"
+  },
+  "devices": [
+    {
+      "name": "waveshare_8ch",
+      "slave_id": 1,
+      "channels": [
+        {
+          "label": "ch1_voltage",
+          "reg_start": 0,
+          "reg_count": 1,
+          "func": 4,
+          "interval_ms": 100,
+          "data_type": "uint16",
+          "mseed_channel": "EHZ"
+        },
+        {
+          "label": "ch1_to_ch8",
+          "reg_start": 0,
+          "reg_count": 8,
+          "func": 4,
+          "interval_ms": 40,
+          "data_type": "uint16"
+        }
+      ]
+    },
+    {
+      "name": "altro_sensore",
+      "slave_id": 2,
+      "channels": [
+        {
+          "label": "temperatura",
+          "reg_start": 100,
+          "reg_count": 2,
+          "func": 3,
+          "interval_ms": 1000,
+          "data_type": "int32",
+          "mseed_channel": "EHN"
+        }
+      ]
+    }
+  ]
+}

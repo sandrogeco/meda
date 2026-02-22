@@ -1,2 +1,20 @@
 # Teltonika RUT956 SDK (too large for git)
 rutos-ramips-rut9m-sdk/
+
+# Build outputs
+build/
+build-rut/obj/
+meda
+modsim
+build.log
+
+# Generated data
+mseed/
+device
+
+# Third-party tools (separate repos)
+ringserver/
+slarchive/
+libmseed/
+libdali/
+

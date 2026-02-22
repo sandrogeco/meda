@@ -1,0 +1,43 @@
+{
+  "serial": {
+    "device": "/dev/ttyUSB0",
+    "baud": 9600,
+    "parity": "N",
+    "data_bits": 8,
+    "stop_bits": 1
+  },
+  "mseed": {
+    "network": "XX",
+    "station": "MEDA1",
+    "location": "00",
+    "format": 3,
+    "reclen": 512,
+    "file_dir": "/home/sandro/Documents/meda/mseed"
+  },
+  "devices": [
+    {
+      "name": "waveshare_8ch",
+      "slave_id": 1,
+      "channels": [
+        {
+          "label": "incl_a1",
+          "reg_start": 0,
+          "reg_count": 1,
+          "func": 4,
+          "interval_ms": 100,
+          "data_type": "uint16",
+          "mseed_channel": "EHZ"
+        },
+        {
+          "label": "incl_a2",
+          "reg_start": 1,
+          "reg_count": 1,
+          "func": 4,
+          "interval_ms": 100,
+          "data_type": "uint16",
+          "mseed_channel": "EHN"
+        }
+      ]
+    }
+  ]
+}
