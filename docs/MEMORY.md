@@ -6,13 +6,12 @@
 - Usare Docker per cross-compilazione RUT956
 
 ## RUT956
+- IP principale: 192.168.1.188 (wlan0-1, WiFi client, gateway 192.168.1.1)
 - IP LAN: 192.168.3.1 (br-lan, nessun cavo collegato)
-- IP ZeroTier: 192.168.194.207 (interfaccia ztrf2rylod)
-- IP WiFi client: 192.168.1.188 (wlan0-1, gateway 192.168.1.1)
 - SSH user: root
 - Password: paciugO80==
 - Internet: funziona via wlan0-1
-- ZeroTier attivo: raggiungibile da remoto via 192.168.194.207
+- ZeroTier: RIMOSSO (liberato spazio overlay)
 
 ### Deploy binari su RUT956
 - Il filesystem root è squashfs (read-only) + overlay
@@ -23,8 +22,8 @@
 
 ### Comandi deploy
 ```bash
-sshpass -p 'paciugO80==' scp build-rut/meda build-rut/modsim root@192.168.194.207:/usr/local/bin/
-sshpass -p 'paciugO80==' scp config-test.json root@192.168.194.207:/root/meda/
+sshpass -p 'paciugO80==' scp build-rut/meda build-rut/modsim root@192.168.1.188:/usr/local/bin/
+sshpass -p 'paciugO80==' scp config-test.json root@192.168.1.188:/root/meda/
 ```
 
 ## Setup hardware

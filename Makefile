@@ -101,4 +101,18 @@ build-rut/modsim: tools/modsim.c
 	$(CROSS_CC) $(CROSS_CFLAGS) -o $@ $< -lm
 
 rut-clean:
-	rm -rf $(RUT_OBJDIR) build-rut/meda build-rut/modsim
+	rm -rf $(RUT_OBJDIR) build-rut/meda build-rut/modsim build-rut/ringserver
+
+# Cross-compile ringserver for RUT956
+.PHONY: rut-ring rut-ring-clean
+
+RING_CC := $(CROSS_CC) --sysroot=$(SYSROOT)
+
+rut-ring: export STAGING_DIR=$(SDK)/staging_dir
+rut-ring:
+	$(MAKE) -C ringserver CC="$(RING_CC)" LDFLAGS="-latomic"
+	cp ringserver/ringserver build-rut/ringserver
+
+rut-ring-clean:
+	$(MAKE) -C ringserver clean
+	rm -f build-rut/ringserver
