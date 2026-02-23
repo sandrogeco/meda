@@ -57,6 +57,10 @@ int main(int argc, char *argv[])
     sigaction(SIGINT, &sa, NULL);
     sigaction(SIGTERM, &sa, NULL);
 
+    /* Ignore SIGPIPE: broken DataLink connection must not kill the process */
+    sa.sa_handler = SIG_IGN;
+    sigaction(SIGPIPE, &sa, NULL);
+
     /* Init and run scheduler */
     if (meda_scheduler_init(&g_sched, &cfg) != 0) {
         fprintf(stderr, "Failed to initialise scheduler\n");

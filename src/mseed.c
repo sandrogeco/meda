@@ -39,8 +39,17 @@ static void record_handler(char *record, int reclen, void *handlerdata)
             int64_t rv = dl_write(ctx->dlconn, record, reclen,
                                   dl_streamid, dl_start, dl_end, 0);
             if (rv < 0) {
-                fprintf(stderr, "mseed: dl_write failed for %s: %" PRId64 "\n",
-                        dl_streamid, rv);
+                fprintf(stderr, "mseed: dl_write failed, reconnecting...\n");
+                dl_disconnect(ctx->dlconn);
+                if (dl_connect(ctx->dlconn) != -1) {
+                    fprintf(stderr, "mseed: reconnected to DataLink\n");
+                    rv = dl_write(ctx->dlconn, record, reclen,
+                                  dl_streamid, dl_start, dl_end, 0);
+                    if (rv < 0)
+                        fprintf(stderr, "mseed: dl_write still failed after reconnect\n");
+                } else {
+                    fprintf(stderr, "mseed: reconnect failed, will retry next record\n");
+                }
             }
             msr3_free(&tmp);
         }
