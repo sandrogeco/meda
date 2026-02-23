@@ -115,6 +115,23 @@ int meda_config_load(const char *path, meda_config_t *cfg)
 
         j = cJSON_GetObjectItem(mseed, "reclen");
         cfg->mseed_reclen = j ? j->valueint : 512;
+
+        j = cJSON_GetObjectItem(mseed, "encoding");
+        if (j && j->valuestring) {
+            const char *enc = j->valuestring;
+            if      (strcmp(enc, "steim2")  == 0) cfg->mseed_encoding = 11;
+            else if (strcmp(enc, "steim1")  == 0) cfg->mseed_encoding = 10;
+            else if (strcmp(enc, "int32")   == 0) cfg->mseed_encoding = 3;
+            else if (strcmp(enc, "int16")   == 0) cfg->mseed_encoding = 1;
+            else if (strcmp(enc, "float32") == 0) cfg->mseed_encoding = 4;
+            else if (strcmp(enc, "float64") == 0) cfg->mseed_encoding = 5;
+            else {
+                fprintf(stderr, "config: unknown mseed encoding \"%s\", using steim2\n", enc);
+                cfg->mseed_encoding = 11;
+            }
+        } else {
+            cfg->mseed_encoding = 11; /* DE_STEIM2 default */
+        }
     }
 
     /* --- devices / channels --- */

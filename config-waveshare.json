@@ -12,6 +12,7 @@
     "location": "00",
     "format": 3,
     "reclen": 512,
+    "encoding": "steim2",
     "file_dir": "/home/sandro/Documents/meda/mseed"
   },
   "devices": [

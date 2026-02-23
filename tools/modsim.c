@@ -279,8 +279,10 @@ int main(int argc, char *argv[])
 
     while (g_running) {
         int len = read_frame(master_fd, frame, sizeof(frame));
-        if (len <= 0)
+        if (len <= 0) {
+            usleep(10000);  /* 10ms: evita busy loop se slave non aperto (POLLHUP/EIO) */
             continue;
+        }
         process_frame(master_fd, frame, len);
     }
 

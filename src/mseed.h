@@ -26,6 +26,7 @@ typedef struct {
     DLCP                 *dlconn;       /* NULL if DataLink disabled */
     char                 *file_dir;     /* NULL if file output disabled */
     int                   reclen;       /* record length (default 512) */
+    int                   encoding;     /* miniSEED encoding (DE_STEIM2=11 default) */
 } meda_mseed_t;
 
 /* Initialise miniSEED output from config. Returns 0 on success, -1 on error.

@@ -43,6 +43,7 @@ typedef struct {
     char            *mseed_file_dir; /* output directory, NULL = disabled */
     int              mseed_format;   /* 2 or 3, default 3 */
     int              mseed_reclen;   /* record length, default 512 */
+    int              mseed_encoding; /* DE_STEIM2=11 default; DE_STEIM1=10, DE_INT32=3, DE_INT16=1, DE_FLOAT32=4 */
 } meda_config_t;
 
 /* Load configuration from JSON file. Returns 0 on success, -1 on error. */

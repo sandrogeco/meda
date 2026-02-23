@@ -29,12 +29,11 @@ static void record_handler(char *record, int reclen, void *handlerdata)
             dltime_t dl_start = tmp->starttime / 1000;  /* ns -> us */
             dltime_t dl_end   = endtime / 1000;
 
-            /* Build DataLink stream ID from SID: "FDSN:XX_STA_LOC_B_S_S" -> "XX_STA_LOC_B_S_S/MSEED" */
+            /* Build DataLink stream ID keeping full SID (incl. "FDSN:" prefix).
+             * Ringserver matches SeedLink clients against the full stream ID,
+             * so the prefix must be present in the ring. */
             char dl_streamid[128];
-            const char *sid_body = tmp->sid;
-            if (strncmp(sid_body, "FDSN:", 5) == 0)
-                sid_body += 5;
-            snprintf(dl_streamid, sizeof(dl_streamid), "%s/MSEED", sid_body);
+            snprintf(dl_streamid, sizeof(dl_streamid), "%s/MSEED", tmp->sid);
 
             int64_t rv = dl_write(ctx->dlconn, record, reclen,
                                   dl_streamid, dl_start, dl_end, 0);
@@ -184,7 +183,8 @@ int meda_mseed_init(meda_mseed_t *ms, const meda_config_t *cfg)
         return -1;
     }
     ms->num_channels = count;
-    ms->reclen = cfg->mseed_reclen > 0 ? cfg->mseed_reclen : 512;
+    ms->reclen    = cfg->mseed_reclen   > 0 ? cfg->mseed_reclen   : 512;
+    ms->encoding  = cfg->mseed_encoding > 0 ? cfg->mseed_encoding : 11; /* DE_STEIM2 */
 
     const char *net = cfg->mseed_network  ? cfg->mseed_network  : "XX";
     const char *sta = cfg->mseed_station  ? cfg->mseed_station  : "MEDA1";
@@ -205,7 +205,7 @@ int meda_mseed_init(meda_mseed_t *ms, const meda_config_t *cfg)
         ch->msr = (MS3Record)MS3Record_INITIALIZER;
         memcpy(ch->msr.sid, ch->sid, sizeof(ch->msr.sid));
         ch->msr.formatversion = (cfg->mseed_format == 2) ? 2 : 3;
-        ch->msr.encoding = DE_STEIM2;
+        ch->msr.encoding = ms->encoding;
         ch->msr.pubversion = 1;
         ch->msr.reclen = ms->reclen;
 
