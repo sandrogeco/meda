@@ -231,10 +231,9 @@ int meda_mseed_init(meda_mseed_t *ms, const meda_config_t *cfg)
             /* non-fatal: continue with file output only */
         } else {
             if (dl_connect(ms->dlconn) == -1) {
-                fprintf(stderr, "mseed: dl_connect(%s) failed\n", cfg->datalink_host);
-                dl_freedlcp(ms->dlconn);
-                ms->dlconn = NULL;
-                /* non-fatal */
+                fprintf(stderr, "mseed: dl_connect(%s) failed, will retry on first record\n",
+                        cfg->datalink_host);
+                /* Keep dlconn handle: record_handler will retry on dl_write failure */
             } else {
                 fprintf(stderr, "mseed: connected to DataLink %s\n", cfg->datalink_host);
             }
