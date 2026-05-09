@@ -15,14 +15,18 @@ LIBDALI_A  := libdali/libdali.a
 
 SRCDIR  := src
 OBJDIR  := build
-TARGET  := meda
 
-SRCS    := $(wildcard $(SRCDIR)/*.c)
-OBJS    := $(patsubst $(SRCDIR)/%.c,$(OBJDIR)/%.o,$(SRCS))
+MEDA_SRCS   := $(SRCDIR)/main.c $(SRCDIR)/config.c $(SRCDIR)/scheduler.c $(SRCDIR)/mseed.c
+RSTILT_SRCS := $(SRCDIR)/rstilt_main.c $(SRCDIR)/rstilt_config.c \
+               $(SRCDIR)/rstilt_parser.c $(SRCDIR)/rstilt_parser_thk.c \
+               $(SRCDIR)/config.c $(SRCDIR)/mseed.c
+
+MEDA_OBJS   := $(patsubst $(SRCDIR)/%.c,$(OBJDIR)/meda/%.o,$(MEDA_SRCS))
+RSTILT_OBJS := $(patsubst $(SRCDIR)/%.c,$(OBJDIR)/rstilt/%.o,$(RSTILT_SRCS))
 
 .PHONY: all clean modsim
 
-all: $(TARGET) modsim
+all: meda rstilt modsim
 
 $(LIBMSEED_A):
 	$(MAKE) -C libmseed static CC="$(CC)"
@@ -30,14 +34,20 @@ $(LIBMSEED_A):
 $(LIBDALI_A):
 	$(MAKE) -C libdali static CC="$(CC)"
 
-$(TARGET): $(OBJS) $(LIBMSEED_A) $(LIBDALI_A)
-	$(CC) $(CFLAGS) -o $@ $(OBJS) $(LIBMSEED_A) $(LIBDALI_A) $(LDFLAGS)
+meda: $(MEDA_OBJS) $(LIBMSEED_A) $(LIBDALI_A)
+	$(CC) $(CFLAGS) -o $@ $(MEDA_OBJS) $(LIBMSEED_A) $(LIBDALI_A) $(LDFLAGS)
 
-$(OBJDIR)/%.o: $(SRCDIR)/%.c | $(OBJDIR)
+rstilt: $(RSTILT_OBJS) $(LIBMSEED_A) $(LIBDALI_A)
+	$(CC) $(CFLAGS) -o $@ $(RSTILT_OBJS) $(LIBMSEED_A) $(LIBDALI_A) $(LDFLAGS)
+
+$(OBJDIR)/meda/%.o: $(SRCDIR)/%.c | $(OBJDIR)/meda
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-$(OBJDIR):
-	mkdir -p $(OBJDIR)
+$(OBJDIR)/rstilt/%.o: $(SRCDIR)/%.c | $(OBJDIR)/rstilt
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+$(OBJDIR)/meda $(OBJDIR)/rstilt:
+	mkdir -p $@
 
 modsim: tools/modsim.c
 	$(CC) $(CFLAGS) -o $@ $< -lm
@@ -59,7 +69,8 @@ CROSS_LDFLAGS := -L$(SYSROOT)/usr/lib -lmodbus -lcjson
 RUT_OBJDIR  := build-rut/obj
 RUT_LIBMSEED := build-rut/libmseed.a
 RUT_LIBDALI  := build-rut/libdali.a
-RUT_OBJS    := $(patsubst $(SRCDIR)/%.c,$(RUT_OBJDIR)/%.o,$(SRCS))
+RUT_MEDA_OBJS   := $(patsubst $(SRCDIR)/%.c,$(RUT_OBJDIR)/meda/%.o,$(MEDA_SRCS))
+RUT_RSTILT_OBJS := $(patsubst $(SRCDIR)/%.c,$(RUT_OBJDIR)/rstilt/%.o,$(RSTILT_SRCS))
 
 LIBMSEED_SRCS := $(wildcard libmseed/*.c)
 LIBDALI_SRCS  := $(wildcard libdali/*.c)
@@ -71,7 +82,7 @@ RUT_CJSON_OBJ  := $(RUT_OBJDIR)/cjson.o
 .PHONY: rut rut-clean
 
 rut: export STAGING_DIR=$(SDK)/staging_dir
-rut: $(RUT_OBJDIR) $(RUT_LIBMSEED) $(RUT_LIBDALI) $(RUT_CJSON_OBJ) build-rut/meda build-rut/modsim
+rut: $(RUT_OBJDIR) $(RUT_LIBMSEED) $(RUT_LIBDALI) $(RUT_CJSON_OBJ) build-rut/meda build-rut/rstilt build-rut/modsim
 
 $(RUT_OBJDIR)/mseed_%.o: libmseed/%.c | $(RUT_OBJDIR)
 	$(CROSS_CC) $(CROSS_CFLAGS) -Ilibmseed -c -o $@ $<
@@ -85,23 +96,29 @@ $(RUT_LIBMSEED): $(RUT_MSEED_OBJS)
 $(RUT_LIBDALI): $(RUT_DALI_OBJS)
 	$(TOOLCHAIN)/bin/mipsel-openwrt-linux-musl-ar rcs $@ $^
 
-$(RUT_OBJDIR):
-	mkdir -p $(RUT_OBJDIR)
+$(RUT_OBJDIR)/meda $(RUT_OBJDIR)/rstilt:
+	mkdir -p $@
 
-$(RUT_OBJDIR)/%.o: $(SRCDIR)/%.c | $(RUT_OBJDIR)
+$(RUT_OBJDIR)/meda/%.o: $(SRCDIR)/%.c | $(RUT_OBJDIR)/meda
+	$(CROSS_CC) $(CROSS_CFLAGS) -c -o $@ $<
+
+$(RUT_OBJDIR)/rstilt/%.o: $(SRCDIR)/%.c | $(RUT_OBJDIR)/rstilt
 	$(CROSS_CC) $(CROSS_CFLAGS) -c -o $@ $<
 
 $(RUT_CJSON_OBJ): $(CJSON_SRC) | $(RUT_OBJDIR)
 	$(CROSS_CC) $(CROSS_CFLAGS) -w -c -o $@ $<
 
-build-rut/meda: $(RUT_OBJS) $(RUT_LIBMSEED) $(RUT_LIBDALI) $(RUT_CJSON_OBJ)
-	$(CROSS_CC) $(CROSS_CFLAGS) -o $@ $(RUT_OBJS) $(RUT_LIBMSEED) $(RUT_LIBDALI) $(RUT_CJSON_OBJ) -L$(SYSROOT)/usr/lib -lmodbus
+build-rut/meda: $(RUT_MEDA_OBJS) $(RUT_LIBMSEED) $(RUT_LIBDALI) $(RUT_CJSON_OBJ)
+	$(CROSS_CC) $(CROSS_CFLAGS) -o $@ $(RUT_MEDA_OBJS) $(RUT_LIBMSEED) $(RUT_LIBDALI) $(RUT_CJSON_OBJ) -L$(SYSROOT)/usr/lib -lmodbus
+
+build-rut/rstilt: $(RUT_RSTILT_OBJS) $(RUT_LIBMSEED) $(RUT_LIBDALI) $(RUT_CJSON_OBJ)
+	$(CROSS_CC) $(CROSS_CFLAGS) -o $@ $(RUT_RSTILT_OBJS) $(RUT_LIBMSEED) $(RUT_LIBDALI) $(RUT_CJSON_OBJ)
 
 build-rut/modsim: tools/modsim.c
 	$(CROSS_CC) $(CROSS_CFLAGS) -o $@ $< -lm
 
 rut-clean:
-	rm -rf $(RUT_OBJDIR) build-rut/meda build-rut/modsim build-rut/ringserver
+	rm -rf $(RUT_OBJDIR) build-rut/meda build-rut/rstilt build-rut/modsim build-rut/ringserver
 
 # Cross-compile ringserver for RUT956
 .PHONY: rut-ring rut-ring-clean
