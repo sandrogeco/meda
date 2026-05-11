@@ -7,7 +7,6 @@
     "stop_bits": 1
   },
   "parser": "thk",
-  "timelog": "/tmp/rstilt-time.csv",
   "mseed": {
     "network": "XX",
     "station": "THK",
