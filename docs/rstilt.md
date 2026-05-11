@@ -149,6 +149,28 @@ Il parser `thk` interpreta il formato del tiltmetro THK: una riga CSV di **esatt
 
 ---
 
+## File e percorsi (RUT956)
+
+| File | Percorso |
+|------|----------|
+| Eseguibile | `/usr/local/home/root/meda/rstilt` |
+| Configurazione | `/usr/local/home/root/meda/config-rstilt.json` |
+| Init script | `/etc/init.d/rstilt` |
+| Symlink boot | `/etc/rc.d/S99rstilt` |
+| Log di esecuzione | `/tmp/rstilt.log` |
+| Log diagnostico timing (opzionale) | valore del campo `"timelog"` in config |
+
+I file in `/tmp` sono su tmpfs (RAM) e vengono persi al riavvio.
+
+Gli altri servizi correlati:
+
+| Servizio | Eseguibile | Configurazione | Log |
+|----------|------------|----------------|-----|
+| ringserver | `/usr/local/bin/ringserver` | `/usr/local/home/root/meda/ring.conf` | `/tmp/ring.log` |
+| meda | `/usr/local/home/root/meda/meda` | `/usr/local/home/root/meda/config-test.json` | `/tmp/meda.log` |
+
+---
+
 ## Avvio automatico (RUT956)
 
 Il servizio è gestito da `/etc/init.d/rstilt` (START=99), che parte dopo ringserver (START=98).
