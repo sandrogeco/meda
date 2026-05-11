@@ -1,0 +1,17 @@
+#!/bin/sh /etc/rc.common
+
+START=99
+STOP=10
+
+DIR=/usr/local/home/root/meda
+RSTILT=$DIR/rstilt
+
+start() {
+    $RSTILT $DIR/config-rstilt.json > /tmp/rstilt.log 2>&1 &
+    logger -t rstilt "rstilt avviato"
+}
+
+stop() {
+    killall rstilt 2>/dev/null
+    logger -t rstilt "rstilt fermato"
+}
