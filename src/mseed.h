@@ -5,13 +5,12 @@
 #include <libmseed.h>
 #include <libdali.h>
 
-#define MEDA_MSEED_BUFSIZE 20   /* max samples per buffer - TODO: spostare in config.json */
-
 /* Per-channel miniSEED state */
 typedef struct {
     char         sid[LM_SIDLEN]; /* "FDSN:XX_MEDA1_00_E_H_Z" */
     MS3Record    msr;            /* template record (stack, not heap) */
-    int32_t      samples[MEDA_MSEED_BUFSIZE];
+    int32_t     *samples;        /* allocated in meda_mseed_init */
+    int          bufsize;        /* number of samples per record (from config) */
     int          sample_count;
     nstime_t     start_time;     /* time of first sample in buffer */
     double       samprate;       /* Hz */

@@ -116,6 +116,9 @@ int meda_config_load(const char *path, meda_config_t *cfg)
         j = cJSON_GetObjectItem(mseed, "reclen");
         cfg->mseed_reclen = j ? j->valueint : 512;
 
+        j = cJSON_GetObjectItem(mseed, "samples_per_record");
+        cfg->mseed_samples_per_record = (j && j->valueint > 0) ? j->valueint : 20;
+
         j = cJSON_GetObjectItem(mseed, "encoding");
         if (j && j->valuestring) {
             const char *enc = j->valuestring;

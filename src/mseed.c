@@ -202,6 +202,8 @@ int meda_mseed_init(meda_mseed_t *ms, const meda_config_t *cfg)
     ms->reclen    = cfg->mseed_reclen   > 0 ? cfg->mseed_reclen   : 512;
     ms->encoding  = cfg->mseed_encoding > 0 ? cfg->mseed_encoding : 11; /* DE_STEIM2 */
 
+    int bufsize = cfg->mseed_samples_per_record > 0 ? cfg->mseed_samples_per_record : 20;
+
     const char *net = cfg->mseed_network  ? cfg->mseed_network  : "XX";
     const char *sta = cfg->mseed_station  ? cfg->mseed_station  : "MEDA1";
     const char *loc = cfg->mseed_location ? cfg->mseed_location : "00";
@@ -233,6 +235,16 @@ int meda_mseed_init(meda_mseed_t *ms, const meda_config_t *cfg)
         else
             ch->samprate = 1.0;
 
+        ch->bufsize = bufsize;
+        ch->samples = calloc(bufsize, sizeof(int32_t));
+        if (!ch->samples) {
+            /* free previously allocated channels */
+            for (size_t j = 0; j < midx; j++)
+                free(ms->channels[j].samples);
+            free(ms->channels); free(ms->chan_map);
+            ms->channels = NULL; ms->chan_map = NULL;
+            return -1;
+        }
         ch->sample_count = 0;
         ch->start_time = NSTUNSET;
 
@@ -291,7 +303,7 @@ void meda_mseed_write(meda_mseed_t *ms, size_t config_chan_idx,
 
         ch->samples[ch->sample_count++] = samples[i];
 
-        if (ch->sample_count >= MEDA_MSEED_BUFSIZE) {
+        if (ch->sample_count >= ch->bufsize) {
             flush_channel(ms, ch, MSF_FLUSHDATA);
         }
     }
@@ -320,6 +332,8 @@ void meda_mseed_destroy(meda_mseed_t *ms)
     free(ms->file_dir);
     ms->file_dir = NULL;
 
+    for (size_t i = 0; i < ms->num_channels; i++)
+        free(ms->channels[i].samples);
     free(ms->channels);
     ms->channels = NULL;
     ms->num_channels = 0;

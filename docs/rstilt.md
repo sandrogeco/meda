@@ -81,9 +81,10 @@ Parametri per la produzione di dati miniSEED e per il trasporto verso il ring bu
 | `location` | string | `"00"`        | Codice location FDSN (2 caratteri)                  |
 | `format`   | int    | `2`           | Versione miniSEED: `2` o `3`                        |
 | `reclen`   | int    | `512`         | Lunghezza record in byte (tipicamente 512 o 4096)   |
-| `encoding` | string | `"steim2"`    | Encoding campioni: `"steim2"`, `"steim1"`, `"int32"`, `"int16"` |
-| `datalink` | string | —             | Indirizzo DataLink del ringserver (`"host:porta"`). Se assente i dati non vengono inviati alla rete. |
-| `file_dir` | string | —             | Directory in cui scrivere file miniSEED locali. Utilizzabile in alternativa o insieme a `datalink`. |
+| `encoding`            | string | `"steim2"` | Encoding campioni: `"steim2"`, `"steim1"`, `"int32"`, `"int16"` |
+| `samples_per_record`  | int    | `20`       | Numero di campioni accumulati prima di chiudere un record miniSEED. Valori tipici: 10–100. |
+| `datalink`            | string | —          | Indirizzo DataLink del ringserver (`"host:porta"`). Se assente i dati non vengono inviati alla rete. |
+| `file_dir`            | string | —          | Directory in cui scrivere file miniSEED locali. Utilizzabile in alternativa o insieme a `datalink`. |
 
 > **Nota su `encoding`:** per sensori con valori ADC di grande ampiezza (es. THK con campo `volt` a 13 cifre) usare `"int32"`. La codifica `"steim2"` può fallire se la differenza tra campioni consecutivi non è rappresentabile in 30 bit.
 
@@ -98,9 +99,10 @@ Esempio:
   "station":  "THK",
   "location": "00",
   "format":   2,
-  "reclen":   512,
-  "encoding": "int32",
-  "datalink": "localhost:16000"
+  "reclen":              512,
+  "encoding":            "int32",
+  "samples_per_record":  20,
+  "datalink":            "localhost:16000"
 }
 ```
 
@@ -133,23 +135,22 @@ Esempio per il tiltmetro THK:
 
 ## Parser THK
 
-Il parser `thk` interpreta il formato del tiltmetro THK: una riga CSV di **esattamente 42 caratteri** terminata da `\r\n`.
+Il parser `thk` interpreta il formato del tiltmetro THK: una riga CSV di **41 o 42 caratteri** terminata da `\r\n`.
 
 ```
-0000001908148,14510518,05997123,00787,0932
-|---- 13 ----|--- 8 --|--- 8 --|-- 5-|- 4-|
-  campo 0      campo 1  campo 2  campo 3  campo 4
+0000001908148,14510518,05997123,00787,0932   ← 42 caratteri (campo 0 = 13 cifre)
+000000190814,14510518,05997123,00787,0932    ← 41 caratteri (campo 0 = 12 cifre)
 ```
 
 | Campo | Larghezza | Canale | Descrizione          |
 |-------|-----------|--------|----------------------|
-| 0     | 13        | LQV    | Tensione (mV × k)    |
+| 0     | 12–13     | LQV    | Tensione (mV × k)    |
 | 1     | 8         | LAX    | Accelerazione asse Y |
 | 2     | 8         | LAY    | Accelerazione asse X |
 | 3     | 5         | LKD    | Temperatura          |
 | 4     | 4         | —      | Ignorato             |
 
-**Validazione:** righe con lunghezza diversa da 42, campi con lunghezza errata o caratteri non numerici vengono scartate silenziosamente. Questo evita l'acquisizione di campioni corrotti tipici della prima riga parziale al boot.
+**Validazione:** righe con meno di 5 campi, campi con larghezza fuori dai limiti ammessi o caratteri non numerici vengono scartate silenziosamente. Questo evita l'acquisizione di campioni corrotti tipici della prima riga parziale al boot.
 
 ---
 

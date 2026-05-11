@@ -6,7 +6,7 @@ LDFLAGS ?=
 MODBUS_CFLAGS := $(shell pkg-config --cflags libmodbus 2>/dev/null || echo "")
 MODBUS_LIBS   := $(shell pkg-config --libs libmodbus 2>/dev/null || echo "-lmodbus")
 
-CFLAGS  += $(MODBUS_CFLAGS) -Ilibmseed -Ilibdali
+CFLAGS  += $(MODBUS_CFLAGS) -Ilibmseed -Ilibdali -MMD -MP
 LDFLAGS += $(MODBUS_LIBS) -lcjson
 
 # Static libraries for libmseed and libdali
@@ -64,7 +64,7 @@ SYSROOT     := $(SDK)/staging_dir/target-mipsel_24kc_musl
 CROSS_CC    := $(TOOLCHAIN)/bin/mipsel-openwrt-linux-musl-gcc
 CROSS_CFLAGS := -Wall -Wextra -O2 --sysroot=$(SYSROOT) \
                 -I$(SYSROOT)/usr/include \
-                -Ilibmseed -Ilibdali -DRUTOS_SDK
+                -Ilibmseed -Ilibdali -DRUTOS_SDK -MMD -MP
 CROSS_LDFLAGS := -L$(SYSROOT)/usr/lib -lmodbus -lcjson
 RUT_OBJDIR  := build-rut/obj
 RUT_LIBMSEED := build-rut/libmseed.a
@@ -96,7 +96,7 @@ $(RUT_LIBMSEED): $(RUT_MSEED_OBJS)
 $(RUT_LIBDALI): $(RUT_DALI_OBJS)
 	$(TOOLCHAIN)/bin/mipsel-openwrt-linux-musl-ar rcs $@ $^
 
-$(RUT_OBJDIR)/meda $(RUT_OBJDIR)/rstilt:
+$(RUT_OBJDIR) $(RUT_OBJDIR)/meda $(RUT_OBJDIR)/rstilt:
 	mkdir -p $@
 
 $(RUT_OBJDIR)/meda/%.o: $(SRCDIR)/%.c | $(RUT_OBJDIR)/meda
@@ -133,3 +133,9 @@ rut-ring:
 rut-ring-clean:
 	$(MAKE) -C ringserver clean
 	rm -f build-rut/ringserver
+
+# Auto-generated header dependencies
+-include $(MEDA_OBJS:.o=.d)
+-include $(RSTILT_OBJS:.o=.d)
+-include $(RUT_MEDA_OBJS:.o=.d)
+-include $(RUT_RSTILT_OBJS:.o=.d)

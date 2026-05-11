@@ -94,6 +94,7 @@ int rstilt_config_load(const char *path, rstilt_config_t *cfg)
         mc->mseed_format   = jint(ms, "format",   2);
         mc->mseed_reclen   = jint(ms, "reclen",   512);
         mc->mseed_encoding = parse_encoding(ms);
+        mc->mseed_samples_per_record = jint(ms, "samples_per_record", 20);
     } else {
         mc->mseed_network  = strdup("XX");
         mc->mseed_station  = strdup("RSTILT");

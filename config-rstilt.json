@@ -13,6 +13,7 @@
     "location": "00",
     "format": 2,
     "reclen": 512,
+    "samples_per_record": 20,
     "encoding": "steim2",
     "datalink": "localhost:16000",
     "file_dir": "/mnt/usb/mseed"
