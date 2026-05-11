@@ -19,7 +19,11 @@
  *   ss[4] ignored
  */
 
-static const int THK_FIELD_LEN[5] = { 13, 8, 8, 5, 4 };
+/* Minimum field lengths — field 0 (voltage) is nominally 13 digits but the
+ * sensor does not guarantee zero-padding and may send 12. Other fields are
+ * stable. We only check minimums to reject obviously partial frames. */
+static const int THK_FIELD_MIN[4] = { 1, 8, 8, 5 };
+static const int THK_FIELD_MAX[4] = { 13, 8, 8, 5 };
 
 static int all_digits(const char *s, int len)
 {
@@ -34,8 +38,8 @@ static int thk_parse(const char *line, int32_t *samples, int max_ch)
     if (max_ch < 4)
         return -1;
 
-    /* fixed-length line: 42 chars (13+1+8+1+8+1+5+1+4) */
-    if (strlen(line) != 42)
+    /* minimum plausible line length to reject very short boot garbage */
+    if (strlen(line) < 30)
         return -1;
 
     char buf[64];
@@ -56,7 +60,8 @@ static int thk_parse(const char *line, int32_t *samples, int max_ch)
 
     for (int i = 0; i < 4; i++) {
         int len = (int)strlen(fields[i]);
-        if (len != THK_FIELD_LEN[i] || !all_digits(fields[i], len)) {
+        if (len < THK_FIELD_MIN[i] || len > THK_FIELD_MAX[i] ||
+            !all_digits(fields[i], len)) {
             fprintf(stderr, "rstilt/thk: invalid field %d: '%s'\n", i, fields[i]);
             return -1;
         }
