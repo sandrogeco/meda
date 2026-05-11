@@ -3,8 +3,9 @@ rutos-ramips-rut9m-sdk/
 
 # Build outputs
 build/
-build-rut/obj/
+build-rut/
 meda
+rstilt
 modsim
 build.log
 

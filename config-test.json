@@ -13,7 +13,7 @@
     "format": 2,
     "reclen": 512,
     "encoding": "steim2",
-    "file_dir": "/tmp/mseed"
+    "datalink": "localhost:16000"
   },
   "devices": [
     {
