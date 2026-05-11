@@ -1,0 +1,18 @@
+#!/bin/sh /etc/rc.common
+
+START=98
+STOP=11
+
+DIR=/usr/local/home/root/meda
+RING=/usr/local/bin/ringserver
+
+start() {
+    mkdir -p /tmp/ring
+    $RING $DIR/ring.conf > /tmp/ring.log 2>&1 &
+    logger -t ringserver "ringserver avviato"
+}
+
+stop() {
+    killall ringserver 2>/dev/null
+    logger -t ringserver "ringserver fermato"
+}

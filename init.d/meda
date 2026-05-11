@@ -4,18 +4,15 @@ START=99
 STOP=10
 
 DIR=/usr/local/home/root/meda
-RING=/usr/local/bin/ringserver
-MEDA=/usr/local/home/root/meda/meda
+MEDA=$DIR/meda
 
 start() {
-    mkdir -p /tmp/ring /tmp/mseed
-    $RING $DIR/ring.conf > /tmp/ring.log 2>&1 &
-    sleep 2
+    mkdir -p /tmp/mseed
     $MEDA $DIR/config-test.json > /tmp/meda.log 2>&1 &
-    logger -t meda "ringserver e meda avviati"
+    logger -t meda "meda avviato"
 }
 
 stop() {
-    killall meda ringserver 2>/dev/null
-    logger -t meda "ringserver e meda fermati"
+    killall meda 2>/dev/null
+    logger -t meda "meda fermato"
 }
