@@ -1,5 +1,7 @@
 #include "rstilt_parser.h"
 
+#include <ctype.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -16,9 +18,24 @@
  *   samples[3] = ss[3]  -> LKD (temperature)
  *   ss[4] ignored
  */
+
+static const int THK_FIELD_LEN[5] = { 13, 8, 8, 5, 4 };
+
+static int all_digits(const char *s, int len)
+{
+    for (int i = 0; i < len; i++)
+        if (!isdigit((unsigned char)s[i]))
+            return 0;
+    return 1;
+}
+
 static int thk_parse(const char *line, int32_t *samples, int max_ch)
 {
     if (max_ch < 4)
+        return -1;
+
+    /* fixed-length line: 42 chars (13+1+8+1+8+1+5+1+4) */
+    if (strlen(line) != 42)
         return -1;
 
     char buf[64];
@@ -36,6 +53,14 @@ static int thk_parse(const char *line, int32_t *samples, int max_ch)
 
     if (n < 4)
         return -1;
+
+    for (int i = 0; i < 4; i++) {
+        int len = (int)strlen(fields[i]);
+        if (len != THK_FIELD_LEN[i] || !all_digits(fields[i], len)) {
+            fprintf(stderr, "rstilt/thk: invalid field %d: '%s'\n", i, fields[i]);
+            return -1;
+        }
+    }
 
     samples[0] = (int32_t)atol(fields[0]);
     samples[1] = (int32_t)atol(fields[1]);
