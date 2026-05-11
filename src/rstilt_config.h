@@ -6,6 +6,7 @@
 typedef struct {
     meda_config_t  mcfg;        /* serial + mseed fields reused as-is */
     char          *parser_name; /* e.g. "thk" */
+    char          *timelog_path; /* optional CSV time-diagnostic log, NULL = disabled */
 } rstilt_config_t;
 
 int  rstilt_config_load(const char *path, rstilt_config_t *cfg);

@@ -80,6 +80,9 @@ int rstilt_config_load(const char *path, rstilt_config_t *cfg)
     cfg->parser_name = (pj && cJSON_IsString(pj))
                        ? strdup(pj->valuestring) : strdup("thk");
 
+    /* timelog (optional) */
+    cfg->timelog_path = jstr(root, "timelog", NULL);
+
     /* mseed */
     cJSON *ms = cJSON_GetObjectItem(root, "mseed");
     if (ms) {
@@ -143,5 +146,7 @@ void rstilt_config_free(rstilt_config_t *cfg)
 {
     free(cfg->parser_name);
     cfg->parser_name = NULL;
+    free(cfg->timelog_path);
+    cfg->timelog_path = NULL;
     meda_config_free(&cfg->mcfg);
 }

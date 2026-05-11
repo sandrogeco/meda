@@ -58,6 +58,24 @@ static int open_serial(const char *device, int baud, char parity,
     return fd;
 }
 
+/* Format ts as local time string: "YYYY-MM-DDTHH:MM:SS+HH:MM" */
+static void fmt_local(const struct timespec *ts, char *buf, size_t n)
+{
+    struct tm tm;
+    localtime_r(&ts->tv_sec, &tm);
+    strftime(buf, n, "%Y-%m-%dT%H:%M:%S%z", &tm);
+}
+
+/* Format ts as UTC string: "YYYY-MM-DDTHH:MM:SS.sssZ" */
+static void fmt_utc(const struct timespec *ts, char *buf, size_t n)
+{
+    struct tm tm;
+    gmtime_r(&ts->tv_sec, &tm);
+    char base[32];
+    strftime(base, sizeof(base), "%Y-%m-%dT%H:%M:%S", &tm);
+    snprintf(buf, n, "%s.%03dZ", base, (int)(ts->tv_nsec / 1000000L));
+}
+
 int main(int argc, char *argv[])
 {
     if (argc < 2) {
@@ -82,6 +100,17 @@ int main(int argc, char *argv[])
             cfg.parser_name, cfg.mcfg.serial_device,
             cfg.mcfg.baud, cfg.mcfg.num_channels);
 
+    /* optional time-diagnostic CSV log */
+    FILE *timelog = NULL;
+    if (cfg.timelog_path) {
+        timelog = fopen(cfg.timelog_path, "a");
+        if (!timelog)
+            fprintf(stderr, "rstilt: cannot open timelog %s: %s\n",
+                    cfg.timelog_path, strerror(errno));
+        else
+            fprintf(timelog, "rut_local,mseed_utc,LAX\n");
+    }
+
     struct sigaction sa;
     memset(&sa, 0, sizeof(sa));
     sa.sa_handler = sig_handler;
@@ -94,6 +123,7 @@ int main(int argc, char *argv[])
     meda_mseed_t ms;
     if (meda_mseed_init(&ms, &cfg.mcfg) != 0) {
         fprintf(stderr, "rstilt: miniSEED init failed\n");
+        if (timelog) fclose(timelog);
         rstilt_config_free(&cfg);
         return 1;
     }
@@ -103,6 +133,7 @@ int main(int argc, char *argv[])
                          cfg.mcfg.stop_bits);
     if (fd < 0) {
         meda_mseed_destroy(&ms);
+        if (timelog) fclose(timelog);
         rstilt_config_free(&cfg);
         return 1;
     }
@@ -140,6 +171,17 @@ int main(int argc, char *argv[])
                                    ? (size_t)nch : cfg.mcfg.num_channels;
                     for (size_t i = 0; i < nfeed; i++)
                         meda_mseed_write(&ms, i, &samples[i], 1, ts_ns);
+
+                    if (timelog) {
+                        char local_buf[40], utc_buf[40];
+                        fmt_local(&ts, local_buf, sizeof(local_buf));
+                        fmt_utc(&ts, utc_buf, sizeof(utc_buf));
+                        /* LAX = channel index 1 (accel_y) */
+                        int32_t lax = (nfeed > 1) ? samples[1] : 0;
+                        fprintf(timelog, "%s,%s,%d\n",
+                                local_buf, utc_buf, lax);
+                        fflush(timelog);
+                    }
                 }
             }
             pos = 0;
@@ -152,6 +194,7 @@ int main(int argc, char *argv[])
 
     close(fd);
     meda_mseed_destroy(&ms);
+    if (timelog) fclose(timelog);
     rstilt_config_free(&cfg);
     fprintf(stderr, "\nrstilt: shutdown\n");
     return 0;
