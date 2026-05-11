@@ -14,7 +14,8 @@
     "format": 2,
     "reclen": 512,
     "encoding": "steim2",
-    "datalink": "localhost:16000"
+    "datalink": "localhost:16000",
+    "file_dir": "/mnt/usb/mseed"
   },
   "channels": [
     { "label": "volt",    "mseed_channel": "LQV", "sample_rate": 1 },

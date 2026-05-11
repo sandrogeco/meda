@@ -71,12 +71,28 @@ static void record_handler(char *record, int reclen, void *handlerdata)
         fname[off] = '\0';
         strncat(fname, ".mseed", sizeof(fname) - strlen(fname) - 1);
 
+        mkdir(ctx->file_dir, 0755); /* no-op if already exists or not mounted */
         FILE *f = fopen(fname, "ab");
         if (f) {
-            fwrite(record, 1, reclen, f);
+            size_t written = fwrite(record, 1, reclen, f);
             fclose(f);
+            if ((int)written != reclen) {
+                /* Disk full or I/O error — log once per minute to avoid flooding */
+                static time_t last_write_err = 0;
+                time_t now = time(NULL);
+                if (now - last_write_err >= 60) {
+                    fprintf(stderr, "mseed: short write on %s (disk full?)\n", fname);
+                    last_write_err = now;
+                }
+            }
         } else {
-            fprintf(stderr, "mseed: cannot open %s: %s\n", fname, strerror(errno));
+            /* Log at most once per minute (USB absent, not mounted, full...) */
+            static time_t last_open_err = 0;
+            time_t now = time(NULL);
+            if (now - last_open_err >= 60) {
+                fprintf(stderr, "mseed: cannot open %s: %s\n", fname, strerror(errno));
+                last_open_err = now;
+            }
         }
     }
 }
