@@ -87,7 +87,9 @@ Parametri per la produzione di dati miniSEED e per il trasporto verso il ring bu
 
 > **Nota su `encoding`:** per sensori con valori ADC di grande ampiezza (es. THK con campo `volt` a 13 cifre) usare `"int32"`. La codifica `"steim2"` può fallire se la differenza tra campioni consecutivi non è rappresentabile in 30 bit.
 
-> **Nota su `file_dir` e `datalink`:** i due campi sono indipendenti e possono coesistere. Se la chiavetta non è montata o è piena, rstilt logga un avviso (al massimo una volta al minuto) e continua a inviare dati via DataLink senza interruzioni. La directory viene ricreata automaticamente ad ogni record, quindi la chiavetta può essere inserita a caldo senza riavviare rstilt. **Importante:** il punto di mount `/mnt/usb` non deve esistere come directory sul filesystem del RUT — deve esistere solo quando la chiavetta è effettivamente montata, altrimenti i file verrebbero scritti sulla flash interna.
+> **Nota su `file_dir` e `datalink`:** i due campi sono indipendenti e possono coesistere. Se la chiavetta non è montata o è piena, rstilt logga un avviso al massimo una volta al minuto e continua a inviare dati via DataLink senza interruzioni. La chiavetta può essere inserita a caldo: rstilt la rileva al record successivo (~20s) senza riavvio.
+>
+> **Attenzione:** non creare manualmente la directory `/mnt/usb` sul RUT. Su OpenWrt quel percorso viene creato automaticamente dal sistema solo quando la chiavetta è inserita e rimosso quando viene estratta. Se la directory esiste senza chiavetta montata, rstilt ci scrive comunque — consumando la flash interna anziché la chiavetta.
 
 Esempio:
 ```json
