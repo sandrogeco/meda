@@ -61,12 +61,20 @@ static void record_handler(char *record, int reclen, void *handlerdata)
         if (strncmp(sid_body, "FDSN:", 5) == 0)
             sid_body += 5;
 
-        /* Replace underscores with dots for filename */
+        /* Build filename: FDSN:NET_STA_LOC_B_S_S -> dir/NET.STA.LOC.BSS.mseed
+           First 3 underscores become dots; last 2 (within channel code) are dropped. */
         char fname[256];
         snprintf(fname, sizeof(fname), "%s/", ctx->file_dir);
         size_t off = strlen(fname);
+        int uscore = 0;
         for (const char *p = sid_body; *p && off < sizeof(fname) - 7; p++) {
-            fname[off++] = (*p == '_') ? '.' : *p;
+            if (*p == '_') {
+                uscore++;
+                if (uscore <= 3)
+                    fname[off++] = '.';
+            } else {
+                fname[off++] = *p;
+            }
         }
         fname[off] = '\0';
         strncat(fname, ".mseed", sizeof(fname) - strlen(fname) - 1);
